@@ -54,7 +54,7 @@ function initGrid(seed) {
   const isMine = Array(HEIGHT * WIDTH).fill(false);
   for (let i = 0; i < MINE; ++i) isMine[i] = true;
   for (let i = 1; i < isMine.length; ++i) {
-    let p = Math.floor(rd() * isMine.length);
+    let p = Math.floor(rd() * (i + 1));
     [isMine[i], isMine[p]] = [isMine[p], isMine[i]];
   }
   for (let x = 0; x < HEIGHT; ++x) {
