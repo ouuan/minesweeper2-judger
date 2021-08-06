@@ -66,9 +66,9 @@ function initGrid(seed) {
   // calculate numbers
   for (let x = 0; x < HEIGHT; ++x) {
     for (let y = 0; y < WIDTH; ++y) {
-      if (grid[x][y] == 9) continue;
+      if (grid[x][y] === 9) continue;
       doAround((x, y, nx, ny) => {
-        if (grid[nx][ny] == 9) {
+        if (grid[nx][ny] === 9) {
           ++grid[x][y];
         }
       });
