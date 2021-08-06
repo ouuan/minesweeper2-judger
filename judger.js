@@ -80,7 +80,7 @@ function open(x, y, round) {
   if (opened[x][y] !== -1) return;
   opened[x][y] = round;
   if (grid[x][y] !== 9) --remain;
-  if (grid[x][y] === 0) doAround((...[, , nx, ny]) => open(nx, ny));
+  if (grid[x][y] === 0) doAround((...[, , nx, ny]) => open(nx, ny, round));
 }
 
 function judge(input) {
