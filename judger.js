@@ -104,7 +104,7 @@ function judge(input) {
       if (!inGrid(row, col) || (opened[row][col] !== -1 && opened[row][col] < i)) invalid[p] = true;
       else {
         if (grid[row][col] !== 9) ++score[p];
-        open(row, col);
+        open(row, col, i);
       }
     }
   }
