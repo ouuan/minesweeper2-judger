@@ -118,19 +118,15 @@ function judge(input) {
     else msg += "player 2";
     output.display = { msg };
     output.content = {
-      0: 1 + invalid[1] - invalid[0],
-      1: 1 + invalid[0] - invalid[1],
+      0: invalid[0] ? -1 : score[0],
+      1: invalid[1] ? -1 : score[1],
     }
   } else if (remain === 0) {
     output.command = "finish";
     output.display = { msg: "FINISHED" };
-    let win;
-    if (score[0] === score[1]) win = 0;
-    else if (score[0] > score[1]) win = 1;
-    else win = -1;
     output.content = {
-      0: 1 + win,
-      1: 1 - win,
+      0: score[0],
+      1: score[1],
     }
   } else {
     output.command = "request";
