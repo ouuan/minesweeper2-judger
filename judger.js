@@ -35,7 +35,7 @@ function doAround(x, y, func) {
       if (dx === 0 && dy === 0) continue;
       const [nx, ny] = [x + dx, y + dy];
       if (!inGrid(nx, ny)) continue;
-      func(x, y, nx, ny);
+      func(nx, ny);
     }
   }
 }
@@ -69,7 +69,7 @@ function initGrid(seed) {
   for (let x = 0; x < HEIGHT; ++x) {
     for (let y = 0; y < WIDTH; ++y) {
       if (grid[x][y] === 9) continue;
-      doAround((x, y, nx, ny) => {
+      doAround(x, y, (nx, ny) => {
         if (grid[nx][ny] === 9) {
           ++grid[x][y];
         }
@@ -82,7 +82,7 @@ function open(x, y, round) {
   if (opened[x][y] !== -1) return;
   opened[x][y] = round;
   if (grid[x][y] !== 9) --remain;
-  if (grid[x][y] === 0) doAround((...[, , nx, ny]) => open(nx, ny, round));
+  if (grid[x][y] === 0) doAround(x, y, (nx, ny) => open(nx, ny, round));
 }
 
 function judge(input) {
