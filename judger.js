@@ -123,7 +123,7 @@ function judge(input) {
     }
   } else if (remain === 0) {
     output.command = "finish";
-    output.display = { msg: "FINISHED" };
+    output.display = { msg: score[0] === score[1] ? "TIE" : `Player ${(score[1] > score[0]) + 1} wins` };
     output.content = {
       0: score[0],
       1: score[1],
