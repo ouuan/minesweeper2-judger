@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // Copyright 2021 Yufan You
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,7 +101,7 @@ function judge(input) {
   for (let i = 1; i < log.length; i += 2) {
     for (let p = 0; p <= 1; ++p) {
       const { row, col } = log[i][p].response;
-      if (!inGrid(row, col) || opened[row][col] < i) invalid[p] = true;
+      if (!inGrid(row, col) || (opened[row][col] !== -1 && opened[row][col] < i)) invalid[p] = true;
       else {
         if (grid[row][col] !== 9) ++score[p];
         open(row, col);
