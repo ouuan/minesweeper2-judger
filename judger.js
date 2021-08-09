@@ -12,7 +12,7 @@
 
 const HEIGHT = 16;
 const WIDTH = 30;
-const MINE = 99;
+const MINE = 120;
 
 const grid = Array.from(Array(HEIGHT), () => Array(WIDTH));
 const opened = Array.from(Array(HEIGHT), () => Array(WIDTH).fill(-1));
@@ -33,7 +33,8 @@ function doAround(x, y, func) {
   for (let dx = -1; dx <= 1; ++dx) {
     for (let dy = -1; dy <= 1; ++dy) {
       if (dx === 0 && dy === 0) continue;
-      const [nx, ny] = [x + dx, y + dy];
+      const nx = x + dx;
+      const ny = y + dy;
       if (!inGrid(nx, ny)) continue;
       func(nx, ny);
     }
@@ -57,7 +58,9 @@ function initGrid(seed) {
   for (let i = 0; i < MINE; ++i) isMine[i] = true;
   for (let i = 1; i < isMine.length; ++i) {
     let p = Math.floor(rd() * (i + 1));
-    [isMine[i], isMine[p]] = [isMine[p], isMine[i]];
+    const tmp = isMine[p];
+    isMine[p] = isMine[i];
+    isMine[i] = tmp;
   }
   for (let x = 0; x < HEIGHT; ++x) {
     for (let y = 0; y < WIDTH; ++y) {
@@ -99,11 +102,14 @@ function judge(input) {
   const invalid = [false, false];
   const score = [0, 0];
   for (let i = 1; i < log.length; i += 2) {
+    const gain = log[i][0].response.row === log[i][1].response.row && log[i][0].response.col === log[i][1].response.col ? 1 : 2;
     for (let p = 0; p <= 1; ++p) {
-      const { row, col } = log[i][p].response;
+      const response = log[i][p].response;
+      const row = response.row;
+      const col = response.col;
       if (!inGrid(row, col) || (opened[row][col] !== -1 && opened[row][col] < i)) invalid[p] = true;
       else {
-        if (grid[row][col] !== 9) ++score[p];
+        if (grid[row][col] !== 9) score[p] += gain;
         open(row, col, i);
       }
     }

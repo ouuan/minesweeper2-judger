@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap.min.css" />
+    <link rel="stylesheet" href="/stylesheets/prettify.css" type="text/css" />
+    <script type="text/javascript" src="/javascripts/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="/javascripts/bootstrap.js"></script>
+    <script type="text/javascript" src="player_api.js"></script>
+    <script type="text/javascript">
+        var dMineField, numMineLeft, numStepUsed, blocks = [], inPlayerTurn, lastMsg,
+            mineLeft = 120, fieldHeight = 16, fieldWidth = 30, stepUsed = 0;
+
+        function ShowTroll(target) {
+            target.append($("<div id=\"imgTroll\"></div>")
+                .animate({
+                    marginLeft: -80,
+                    marginTop: -80,
+                    zoom: 1.1,
+                    opacity: 1
+                }, 150).animate({
+                    zoom: 1
+                }, 20).animate({
+                    opacity: 0
+                }, 1000, function () {
+                    $(this).remove();
+                }));
+        }
+
+        function ShowLCD(digits, number) {
+            number = Math.floor(number);
+            if (number >= 1000 || number < 0) {
+                digits.removeClass();
+            } else {
+                digits.eq(0).removeClass().addClass("num" + Math.floor(number / 100));
+                digits.eq(1).removeClass().addClass("num" + Math.floor(number / 10) % 10);
+                digits.eq(2).removeClass().addClass("num" + number % 10);
+            }
+        }
+
+        function ChangeBlockStatus(row, col, to) {
+            var $block = blocks[row][col];
+            if ($block.data("status") || to == 10)
+                return;
+            $block.removeClass("tagmine");
+            $block.data("status", to + 1);
+            if (to < 9) { // 改变为数字
+                $block.addClass("num" + to);
+            } else if (to == 9) { // 改变为雷
+                $block.addClass("mine");
+                ShowTroll($block);
+            }
+        }
+
+        $(document).ready(function () {
+            // 初始化前端显示
+            dMineField = $("#dMineField");
+            $("#lblMineLeft, #lblStepUsed").tooltip();
+            numMineLeft = $("#lblMineLeft div");
+            numStepUsed = $("#lblStepUsed div");
+            ShowLCD(numMineLeft, mineLeft);
+
+            var $block = $("<div class=\"mineblock\"></div>");
+            for (var row = 0; row < fieldHeight; row++) {
+                var currRow = [];
+                for (var col = 0; col < fieldWidth; col++) {
+                    var curr = $block.clone(true);
+                    currRow.push(curr.data("coord", { col: col, row: row }));
+                    dMineField.append(curr);
+                }
+                blocks.push(currRow);
+                dMineField.append("<br />");
+            }
+
+            // 设置雷区按下效果
+            $(document).bind("contextmenu", function () { return false; })
+                .on('mousedown', '.mineblock', function (e) {
+                    var $this = $(this);
+                    if (e.button == 2) {
+                        if (!$this.data("status")) {
+                            $this.toggleClass("tagmine");
+                            if ($this.hasClass("tagmine"))
+                                mineLeft--;
+                            else
+                                mineLeft++;
+                            ShowLCD(numMineLeft, mineLeft);
+                        }
+                    }
+                    if (inPlayerTurn) {
+                        if (!$this.hasClass("tagmine") && e.button == 0)
+                            $this.addClass("pressed");
+                    }
+                })
+                .on('mouseup', '.mineblock', function () {
+                    $(this).removeClass("pressed");
+                })
+                .on('click', '.mineblock', function (e) {
+                    var $this = $(this);
+                    if (e.button == 0 && !$this.hasClass("tagmine") && inPlayerTurn) {
+                        if (!$this.data("status")) {
+                            infoProvider.notifyPlayerMove($this.data("coord"));
+                            stepUsed++;
+                            ShowLCD(numStepUsed, stepUsed);
+                            dMineField.css({
+                                opacity: 0.5
+                            });
+                            inPlayerTurn = false;
+                        }
+                    }
+                });
+
+            // 设置接收log的回调
+            var newLogCallback, gameOverCallback;
+
+            infoProvider.setNewLogCallback(newLogCallback = function (log) {
+                if (!log || log == "")
+                    return;
+                if (typeof log === 'string')
+                    log = JSON.parse(log);
+                if (log.msg)
+                    lastMsg = log.msg;
+                if (log.status) {
+                    log = log.status;
+                    if (Object.prototype.toString.call(log) === '[object Array]') { // WTF！instanceof不行！
+                        for (var i in log)
+                            ChangeBlockStatus(log[i].row, log[i].col, log[i].val);
+                    } else {
+                        var i, len = log.length;
+                        for (i = 0; i < len; i++)
+                            ChangeBlockStatus(Math.floor(i / fieldWidth), i % fieldWidth, parseInt(log[i], 16));
+                    }
+                }
+            });
+
+            infoProvider.setNewRequestCallback(function (log) {
+                dMineField.css({
+                    opacity: 1
+                });
+                inPlayerTurn = true;
+            });
+
+            infoProvider.setReadHistoryCallback(function (logs) {
+                for (var i in logs)
+                    newLogCallback(logs[i]);
+            });
+
+            infoProvider.setGameOverCallback(gameOverCallback = function (scores) {
+                $("#dInfobox").css({
+                    opacity: 0,
+                    zoom: 3
+                }).show().animate({
+                    zoom: "1",
+                    opacity: "0.9"
+                }, 500).html(lastMsg + "<br />玩家 1 得分：" + scores[0] + "<br />玩家 2 得分：" + scores[1]);
+
+            });
+
+            function inGrid(x, y) {
+              return (
+                Number.isInteger(x) &&
+                Number.isInteger(y) &&
+                x >= 0 &&
+                x < fieldHeight &&
+                y >= 0 &&
+                y < fieldWidth
+              );
+            }
+
+            infoProvider.setReadFullLogCallback(function (fulllog) {
+                if (fulllog.output) {
+                    stepUsed++;
+                    ShowLCD(numStepUsed, stepUsed);
+                    newLogCallback(fulllog.output.display);
+                    if (fulllog.output.command == "finish")
+                        gameOverCallback(fulllog.output.content);
+                } else if (fulllog[0].response && inGrid(fulllog[0].response.row, fulllog[0].response.col)) {
+                    var currClickedBlock = blocks[fulllog[0].response.row][fulllog[0].response.col];
+                    currClickedBlock.addClass("click");
+                    setTimeout(function () {
+                        currClickedBlock.removeClass("click");
+                    }, 500);
+                }
+            });
+
+            // 完成初始化
+            infoProvider.setSize(800, 400);
+            infoProvider.notifyInitComplete();
+        });
+    </script>
+    <style>
+        body {
+            background-color: #c0c0c0;
+        }
+
+        .clearfix:before, .clearfix:after {
+            content: " ";
+            display: table;
+            clear: both;
+        }
+
+        .padding-sm {
+            padding: 5px;
+        }
+
+        .border-out {
+            border-top: 2.5px solid white;
+            border-left: 2.5px solid white;
+            border-right: 2.5px solid #808080;
+            border-bottom: 2.5px solid #808080;
+        }
+
+        .border-in {
+            border-top: 2.5px solid #808080;
+            border-left: 2.5px solid #808080;
+            border-right: 2.5px solid white;
+            border-bottom: 2.5px solid white;
+        }
+
+        .border-thick {
+            border-width: 5px;
+        }
+
+        .lfloat {
+            float: left;
+        }
+
+        .rfloat {
+            float: right;
+        }
+
+        .titleblock {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .title {
+            font: bold 20px 微软雅黑;
+            -webkit-text-stroke: white 0.5px;
+            width: 50%;
+            display: inline-block;
+            line-height: 30px;
+            background: linear-gradient(to right, transparent, #b3deff, transparent);
+        }
+
+        .score {
+            display: inline-block;
+            background-color: black;
+            padding: 5px;
+        }
+
+        .digit-container > div {
+            display: inline-block;
+            width: 13px;
+            height: 23px;
+            margin: 0;
+            background-image: url(Minesweeper/digit.bmp);
+            background-position: 0 0;
+        }
+
+            .digit-container > div.num0 {
+                background-position: 0 -253px;
+            }
+
+            .digit-container > div.num1 {
+                background-position: 0 -230px;
+            }
+
+            .digit-container > div.num2 {
+                background-position: 0 -207px;
+            }
+
+            .digit-container > div.num3 {
+                background-position: 0 -184px;
+            }
+
+            .digit-container > div.num4 {
+                background-position: 0 -161px;
+            }
+
+            .digit-container > div.num5 {
+                background-position: 0 -138px;
+            }
+
+            .digit-container > div.num6 {
+                background-position: 0 -115px;
+            }
+
+            .digit-container > div.num7 {
+                background-position: 0 -92px;
+            }
+
+            .digit-container > div.num8 {
+                background-position: 0 -69px;
+            }
+
+            .digit-container > div.num9 {
+                background-position: 0 -46px;
+            }
+
+        .fieldwrapper {
+            text-align: center;
+        }
+
+        #imgTroll {
+            position: absolute;
+            zoom: 0.1;
+            opacity: 0;
+            width: 160px;
+            height: 160px;
+            background-image: url(Minesweeper/troll.jpg);
+        }
+
+        #dMineField {
+            line-height: 10px;
+            display: inline-block;
+            cursor: default;
+            opacity: 0.5;
+        }
+
+        .mineblock {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            background-image: url(Minesweeper/block.bmp);
+            background-position: 0 0;
+        }
+
+            .mineblock.click {
+                background: #3d4f72;
+            }
+
+            .mineblock.pressed, .mineblock.num0 {
+                background-position: 0 -240px;
+            }
+
+            .mineblock.num1 {
+                background-position: 0 -224px;
+            }
+
+            .mineblock.num2 {
+                background-position: 0 -208px;
+            }
+
+            .mineblock.num3 {
+                background-position: 0 -192px;
+            }
+
+            .mineblock.num4 {
+                background-position: 0 -176px;
+            }
+
+            .mineblock.num5 {
+                background-position: 0 -160px;
+            }
+
+            .mineblock.num6 {
+                background-position: 0 -144px;
+            }
+
+            .mineblock.num7 {
+                background-position: 0 -128px;
+            }
+
+            .mineblock.num8 {
+                background-position: 0 -112px;
+            }
+
+            .mineblock.mine {
+                background-position: 0 -80px;
+            }
+
+            .mineblock.activemine {
+                background-position: 0 -48px;
+            }
+
+            .mineblock.tagmine {
+                background-position: 0 -16px;
+            }
+
+
+
+        div.infobox {
+            z-index: 99;
+            top: 50%;
+            left: 50%;
+            position: fixed;
+            margin-top: -100px;
+            margin-left: -275px;
+            text-align: center;
+            padding: 30px;
+            border: 2px solid #a1a1a1;
+            box-shadow: 0 0 10px #000000;
+            background: #dddddd;
+            width: 500px;
+            border-radius: 25px;
+            opacity: 0.9;
+            font-size: 40px;
+            font-family: "微软雅黑";
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="infobox" id="dInfobox" style="display: none;">
+        消息
+    </div>
+    <div class="titleblock">
+        <div class="border-in lfloat score digit-container" id="lblMineLeft" data-toggle="tooltip" data-placement="bottom" title="剩余雷数">
+            <div></div><div></div><div></div>
+        </div>
+        <span class="title">扫雷</span>
+        <div class="border-in rfloat score digit-container" id="lblStepUsed" data-toggle="tooltip" data-placement="bottom" title="已用步数">
+            <div></div><div></div><div></div>
+        </div>
+    </div>
+    <div class="fieldwrapper">
+        <div class="border-in border-thick" id="dMineField">
+
+        </div>
+    </div>
+</body>
+</html>
