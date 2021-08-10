@@ -59,6 +59,16 @@
         }
 
         $(document).ready(function () {
+            var initdata = {};
+            try {
+                initdata = JSON.parse(infoProvider.getMatchInitData());
+            } catch (ex) { }
+
+            if (Number.isSafeInteger(initdata.height) && initdata.height >= 2 && initdata.height <= 30) fieldHeight = initdata.height;
+            if (Number.isSafeInteger(initdata.width) && initdata.width >= 2 && initdata.width <= 50) fieldWidth = initdata.width;
+            mineLeft = Math.ceil(fieldHeight * fieldWidth / 4);
+            if (Number.isSafeInteger(initdata.minecount) && initdata.minecount >= 1 && initdata.minecount < fieldHeight * fieldWidth && initdata.minecount <= 999) mineLeft = initdata.minecount;
+
             // 初始化前端显示
             dMineField = $("#dMineField");
             $("#lblMineLeft, #lblStepUsed, #boom-one, #boom-two").tooltip();
@@ -166,7 +176,7 @@
                 }).show().animate({
                     zoom: "1",
                     opacity: "0.9"
-                }, 500).html(lastMsg + "<br />玩家 1 得分：" + scores[0] + "<br />玩家 2 得分：" + scores[1]);
+                }, 500).html(lastMsg + "<br />玩家 1 得分：" + Number(scores[0].toPrecision(5)) + "<br />玩家 2 得分：" + Number(scores[1].toPrecision(5)));
 
             });
 
@@ -196,7 +206,7 @@
             });
 
             // 完成初始化
-            infoProvider.setSize(1000, 420);
+            infoProvider.setSize(1000, Math.max(400, 180 + fieldHeight * 16));
             infoProvider.notifyInitComplete();
         });
     </script>

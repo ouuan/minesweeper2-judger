@@ -10,22 +10,19 @@
 
 "use strict";
 
-const HEIGHT = 16;
-const WIDTH = 30;
-const MINE = 120;
-
-const grid = Array.from(Array(HEIGHT), () => Array(WIDTH));
-const opened = Array.from(Array(HEIGHT), () => Array(WIDTH).fill(-1));
-let remain = HEIGHT * WIDTH - MINE;
+let height = 16;
+let width = 30;
+let minecount = 120;
+let grid, opened, remain;
 
 function inGrid(x, y) {
   return (
     Number.isInteger(x) &&
     Number.isInteger(y) &&
     x >= 0 &&
-    x < HEIGHT &&
+    x < height &&
     y >= 0 &&
-    y < WIDTH
+    y < width
   );
 }
 
@@ -42,6 +39,10 @@ function doAround(x, y, func) {
 }
 
 function initGrid(seed) {
+  grid = Array.from(Array(height), () => Array(width));
+  opened = Array.from(Array(height), () => Array(width).fill(-1));
+  remain = height * width - minecount;
+
   // rand function
   function mulberry32(a) {
     return function() {
@@ -54,23 +55,23 @@ function initGrid(seed) {
   const rd = mulberry32(seed);
 
   // set mines
-  const isMine = Array(HEIGHT * WIDTH).fill(false);
-  for (let i = 0; i < MINE; ++i) isMine[i] = true;
+  const isMine = Array(height * width).fill(false);
+  for (let i = 0; i < minecount; ++i) isMine[i] = true;
   for (let i = 1; i < isMine.length; ++i) {
     let p = Math.floor(rd() * (i + 1));
     const tmp = isMine[p];
     isMine[p] = isMine[i];
     isMine[i] = tmp;
   }
-  for (let x = 0; x < HEIGHT; ++x) {
-    for (let y = 0; y < WIDTH; ++y) {
-      grid[x][y] = isMine[x * WIDTH + y] ? 9 : 0;
+  for (let x = 0; x < height; ++x) {
+    for (let y = 0; y < width; ++y) {
+      grid[x][y] = isMine[x * width + y] ? 9 : 0;
     }
   }
 
   // calculate numbers
-  for (let x = 0; x < HEIGHT; ++x) {
-    for (let y = 0; y < WIDTH; ++y) {
+  for (let x = 0; x < height; ++x) {
+    for (let y = 0; y < width; ++y) {
       if (grid[x][y] === 9) continue;
       doAround(x, y, (nx, ny) => {
         if (grid[nx][ny] === 9) {
@@ -94,8 +95,17 @@ function judge(input) {
 
   // init
   let seed = Math.floor(Math.random() * 4294967296);
-  if (Number.isInteger(input.initdata)) seed = input.initdata;
-  if (log.length === 0) output.initdata = seed;
+  const initdata = input.initdata;
+
+  if (typeof initdata === 'object') {
+    if (Number.isSafeInteger(initdata.seed)) seed = Math.abs(initdata.seed);
+    if (Number.isSafeInteger(initdata.height) && initdata.height >= 2 && initdata.height <= 30) height = initdata.height;
+    if (Number.isSafeInteger(initdata.width) && initdata.width >= 2 && initdata.width <= 50) width = initdata.width;
+    minecount = Math.ceil(height * width / 4);
+    if (Number.isSafeInteger(initdata.minecount) && initdata.minecount >= 1 && initdata.minecount < height * width && initdata.minecount <= 999) minecount = initdata.minecount;
+  }
+
+  if (log.length === 0) output.initdata = { seed, height, width, minecount };
   initGrid(seed);
 
   // restore state
@@ -103,6 +113,10 @@ function judge(input) {
   const boom = [0, 0];
   for (let i = 1; i < log.length; i += 2) {
     for (let p = 0; p <= 1; ++p) {
+      if (log[i][p].verdict !== "OK") {
+        invalid[p] = true;
+        continue;
+      }
       const response = log[i][p].response;
       const row = response.row;
       const col = response.col;
@@ -117,11 +131,11 @@ function judge(input) {
   // generate output
 
   const stepUsed = Math.floor(log.length / 2);
-  const score = boom.map((x) => (100 - x * 100 / MINE));
+  const score = boom.map((x) => (100 - x * 100 / minecount));
 
   let changed = [];
-  for (let x = 0; x < HEIGHT; ++x) {
-    for (let y = 0; y < WIDTH; ++y) {
+  for (let x = 0; x < height; ++x) {
+    for (let y = 0; y < width; ++y) {
       if (log.length > 0 && opened[x][y] === log.length - 1) {
         changed.push({
           row: x,
@@ -155,9 +169,9 @@ function judge(input) {
     if (changed.length === 0) changed = null;
     output.display = { status: changed, boom, stepUsed };
     const request = {
-      height: HEIGHT,
-      width: WIDTH,
-      minecount: MINE,
+      height,
+      width,
+      minecount,
       changed,
     }
     output.content = {
