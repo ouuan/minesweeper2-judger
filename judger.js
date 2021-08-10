@@ -93,63 +93,66 @@ function judge(input) {
   const output = {};
 
   // init
-  let seed = new Date().getTime();
+  let seed = Math.floor(Math.random() * 4294967296);
   if (Number.isInteger(input.initdata)) seed = input.initdata;
   if (log.length === 0) output.initdata = seed;
   initGrid(seed);
 
   // restore state
   const invalid = [false, false];
-  const score = [0, 0];
+  const score = [100, 100];
   for (let i = 1; i < log.length; i += 2) {
-    const gain = log[i][0].response.row === log[i][1].response.row && log[i][0].response.col === log[i][1].response.col ? 1 : 2;
     for (let p = 0; p <= 1; ++p) {
       const response = log[i][p].response;
       const row = response.row;
       const col = response.col;
       if (!inGrid(row, col) || (opened[row][col] !== -1 && opened[row][col] < i)) invalid[p] = true;
       else {
-        if (grid[row][col] !== 9) score[p] += gain;
+        if (grid[row][col] === 9) --score[p];
         open(row, col, i);
       }
     }
   }
 
   // generate output
+
+  const stepUsed = Math.floor(log.length / 2);
+
+  let changed = [];
+  for (let x = 0; x < HEIGHT; ++x) {
+    for (let y = 0; y < WIDTH; ++y) {
+      if (log.length > 0 && opened[x][y] === log.length - 1) {
+        changed.push({
+          row: x,
+          col: y,
+          val: grid[x][y],
+        });
+      }
+    }
+  }
+
   if (invalid[0] || invalid[1]) {
     output.command = "finish";
-    let msg = "INVALID MOVE: ";
-    if (invalid[0] && invalid[1]) msg += "both player";
-    else if (invalid[0]) msg += "player 1";
-    else msg += "player 2";
-    output.display = { msg };
+    let msg = " invalid";
+    if (invalid[0] && invalid[1]) msg = "Both player" + msg;
+    else if (invalid[0]) msg = "Player 1" + msg;
+    else msg = "Player 2" + msg;
+    output.display = { msg, score, stepUsed };
     output.content = {
       0: invalid[0] ? -1 : score[0],
       1: invalid[1] ? -1 : score[1],
     }
   } else if (remain === 0) {
     output.command = "finish";
-    output.display = { msg: score[0] === score[1] ? "TIE" : `Player ${(score[1] > score[0]) + 1} wins` };
+    output.display = { msg: score[0] === score[1] ? "平局" : `玩家 ${(score[1] > score[0]) + 1} 获胜`, status: changed, score, stepUsed };
     output.content = {
       0: score[0],
       1: score[1],
     }
   } else {
     output.command = "request";
-    let changed = [];
-    for (let x = 0; x < HEIGHT; ++x) {
-      for (let y = 0; y < WIDTH; ++y) {
-        if (log.length > 0 && opened[x][y] === log.length - 1) {
-          changed.push({
-            row: x,
-            col: y,
-            val: grid[x][y],
-          });
-        }
-      }
-    }
     if (changed.length === 0) changed = null;
-    output.display = { status: changed };
+    output.display = { status: changed, score, stepUsed };
     const request = {
       height: HEIGHT,
       width: WIDTH,

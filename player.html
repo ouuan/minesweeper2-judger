@@ -9,8 +9,8 @@
     <script type="text/javascript" src="/javascripts/bootstrap.js"></script>
     <script type="text/javascript" src="player_api.js"></script>
     <script type="text/javascript">
-        var dMineField, numMineLeft, numStepUsed, blocks = [], inPlayerTurn, lastMsg,
-            mineLeft = 120, fieldHeight = 16, fieldWidth = 30, stepUsed = 0;
+        var dMineField, numMineLeft, numStepUsed, scoreOne, scoreTwo, blocks = [],
+            inPlayerTurn, lastMsg, mineLeft = 120, fieldHeight = 16, fieldWidth = 30;
 
         function ShowTroll(target) {
             target.append($("<div id=\"imgTroll\"></div>")
@@ -43,23 +43,32 @@
             var $block = blocks[row][col];
             if ($block.data("status") || to == 10)
                 return;
-            $block.removeClass("tagmine");
+            if ($block.hasClass("tagmine")) {
+                ++mineLeft;
+                $block.removeClass("tagmine");
+            }
             $block.data("status", to + 1);
             if (to < 9) { // 改变为数字
                 $block.addClass("num" + to);
             } else if (to == 9) { // 改变为雷
                 $block.addClass("mine");
                 ShowTroll($block);
+                --mineLeft;
             }
+            ShowLCD(numMineLeft, mineLeft);
         }
 
         $(document).ready(function () {
             // 初始化前端显示
             dMineField = $("#dMineField");
-            $("#lblMineLeft, #lblStepUsed").tooltip();
+            $("#lblMineLeft, #lblStepUsed, #score-one, #score-two").tooltip();
             numMineLeft = $("#lblMineLeft div");
             numStepUsed = $("#lblStepUsed div");
+            scoreOne = $("#score-one div");
+            scoreTwo = $("#score-two div");
             ShowLCD(numMineLeft, mineLeft);
+            ShowLCD(scoreOne, 100);
+            ShowLCD(scoreTwo, 100);
 
             var $block = $("<div class=\"mineblock\"></div>");
             for (var row = 0; row < fieldHeight; row++) {
@@ -100,8 +109,6 @@
                     if (e.button == 0 && !$this.hasClass("tagmine") && inPlayerTurn) {
                         if (!$this.data("status")) {
                             infoProvider.notifyPlayerMove($this.data("coord"));
-                            stepUsed++;
-                            ShowLCD(numStepUsed, stepUsed);
                             dMineField.css({
                                 opacity: 0.5
                             });
@@ -121,15 +128,22 @@
                 if (log.msg)
                     lastMsg = log.msg;
                 if (log.status) {
-                    log = log.status;
-                    if (Object.prototype.toString.call(log) === '[object Array]') { // WTF！instanceof不行！
-                        for (var i in log)
-                            ChangeBlockStatus(log[i].row, log[i].col, log[i].val);
+                    const status = log.status;
+                    if (Object.prototype.toString.call(status) === '[object Array]') { // WTF！instanceof不行！
+                        for (var i in status)
+                            ChangeBlockStatus(status[i].row, status[i].col, status[i].val);
                     } else {
-                        var i, len = log.length;
+                        var i, len = status.length;
                         for (i = 0; i < len; i++)
-                            ChangeBlockStatus(Math.floor(i / fieldWidth), i % fieldWidth, parseInt(log[i], 16));
+                            ChangeBlockStatus(Math.floor(i / fieldWidth), i % fieldWidth, parseInt(status[i], 16));
                     }
+                }
+                if (log.score) {
+                    ShowLCD(scoreOne, log.score[0]);
+                    ShowLCD(scoreTwo, log.score[1]);
+                }
+                if (log.stepUsed) {
+                    ShowLCD(numStepUsed, log.stepUsed);
                 }
             });
 
@@ -169,8 +183,6 @@
 
             infoProvider.setReadFullLogCallback(function (fulllog) {
                 if (fulllog.output) {
-                    stepUsed++;
-                    ShowLCD(numStepUsed, stepUsed);
                     newLogCallback(fulllog.output.display);
                     if (fulllog.output.command == "finish")
                         gameOverCallback(fulllog.output.content);
@@ -184,7 +196,7 @@
             });
 
             // 完成初始化
-            infoProvider.setSize(800, 400);
+            infoProvider.setSize(1000, 400);
             infoProvider.notifyInitComplete();
         });
     </script>
@@ -232,6 +244,8 @@
         .titleblock {
             margin-bottom: 20px;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
         }
 
         .title {
@@ -407,11 +421,17 @@
         消息
     </div>
     <div class="titleblock">
-        <div class="border-in lfloat score digit-container" id="lblMineLeft" data-toggle="tooltip" data-placement="bottom" title="剩余雷数">
+        <div class="border-in score digit-container" id="lblMineLeft" data-toggle="tooltip" data-placement="bottom" title="剩余雷数">
             <div></div><div></div><div></div>
         </div>
-        <span class="title">扫雷</span>
-        <div class="border-in rfloat score digit-container" id="lblStepUsed" data-toggle="tooltip" data-placement="bottom" title="已用步数">
+        <div class="border-in score digit-container" id="score-one" data-toggle="tooltip" data-placement="bottom" title="玩家 1 分数">
+            <div></div><div></div><div></div>
+        </div>
+        <span class="title">扫雷（双人版）</span>
+        <div class="border-in score digit-container" id="score-two" data-toggle="tooltip" data-placement="bottom" title="玩家 2 分数">
+            <div></div><div></div><div></div>
+        </div>
+        <div class="border-in score digit-container" id="lblStepUsed" data-toggle="tooltip" data-placement="bottom" title="已用步数">
             <div></div><div></div><div></div>
         </div>
     </div>
