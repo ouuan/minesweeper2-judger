@@ -100,7 +100,7 @@ function judge(input) {
 
   // restore state
   const invalid = [false, false];
-  const score = [100, 100];
+  const boom = [0, 0];
   for (let i = 1; i < log.length; i += 2) {
     for (let p = 0; p <= 1; ++p) {
       const response = log[i][p].response;
@@ -108,7 +108,7 @@ function judge(input) {
       const col = response.col;
       if (!inGrid(row, col) || (opened[row][col] !== -1 && opened[row][col] < i)) invalid[p] = true;
       else {
-        if (grid[row][col] === 9) --score[p];
+        if (grid[row][col] === 9) ++boom[p];
         open(row, col, i);
       }
     }
@@ -117,6 +117,7 @@ function judge(input) {
   // generate output
 
   const stepUsed = Math.floor(log.length / 2);
+  const score = boom.map((x) => (100 - x * 100 / MINE));
 
   let changed = [];
   for (let x = 0; x < HEIGHT; ++x) {
@@ -137,14 +138,14 @@ function judge(input) {
     if (invalid[0] && invalid[1]) msg = "Both player" + msg;
     else if (invalid[0]) msg = "Player 1" + msg;
     else msg = "Player 2" + msg;
-    output.display = { msg, score, stepUsed };
+    output.display = { msg, boom, stepUsed };
     output.content = {
       0: invalid[0] ? -1 : score[0],
       1: invalid[1] ? -1 : score[1],
     }
   } else if (remain === 0) {
     output.command = "finish";
-    output.display = { msg: score[0] === score[1] ? "平局" : `玩家 ${(score[1] > score[0]) + 1} 获胜`, status: changed, score, stepUsed };
+    output.display = { msg: score[0] === score[1] ? "平局" : `玩家 ${(score[1] > score[0]) + 1} 获胜`, status: changed, boom, stepUsed };
     output.content = {
       0: score[0],
       1: score[1],
@@ -152,7 +153,7 @@ function judge(input) {
   } else {
     output.command = "request";
     if (changed.length === 0) changed = null;
-    output.display = { status: changed, score, stepUsed };
+    output.display = { status: changed, boom, stepUsed };
     const request = {
       height: HEIGHT,
       width: WIDTH,

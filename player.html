@@ -9,7 +9,7 @@
     <script type="text/javascript" src="/javascripts/bootstrap.js"></script>
     <script type="text/javascript" src="player_api.js"></script>
     <script type="text/javascript">
-        var dMineField, numMineLeft, numStepUsed, scoreOne, scoreTwo, blocks = [],
+        var dMineField, numMineLeft, numStepUsed, boomOne, boomTwo, blocks = [],
             inPlayerTurn, lastMsg, mineLeft = 120, fieldHeight = 16, fieldWidth = 30;
 
         function ShowTroll(target) {
@@ -61,14 +61,14 @@
         $(document).ready(function () {
             // 初始化前端显示
             dMineField = $("#dMineField");
-            $("#lblMineLeft, #lblStepUsed, #score-one, #score-two").tooltip();
+            $("#lblMineLeft, #lblStepUsed, #boom-one, #boom-two").tooltip();
             numMineLeft = $("#lblMineLeft div");
             numStepUsed = $("#lblStepUsed div");
-            scoreOne = $("#score-one div");
-            scoreTwo = $("#score-two div");
+            boomOne = $("#boom-one div");
+            boomTwo = $("#boom-two div");
             ShowLCD(numMineLeft, mineLeft);
-            ShowLCD(scoreOne, 100);
-            ShowLCD(scoreTwo, 100);
+            ShowLCD(boomOne, 0);
+            ShowLCD(boomTwo, 0);
 
             var $block = $("<div class=\"mineblock\"></div>");
             for (var row = 0; row < fieldHeight; row++) {
@@ -138,9 +138,9 @@
                             ChangeBlockStatus(Math.floor(i / fieldWidth), i % fieldWidth, parseInt(status[i], 16));
                     }
                 }
-                if (log.score) {
-                    ShowLCD(scoreOne, log.score[0]);
-                    ShowLCD(scoreTwo, log.score[1]);
+                if (log.boom) {
+                    ShowLCD(boomOne, log.boom[0]);
+                    ShowLCD(boomTwo, log.boom[1]);
                 }
                 if (log.stepUsed) {
                     ShowLCD(numStepUsed, log.stepUsed);
@@ -196,7 +196,7 @@
             });
 
             // 完成初始化
-            infoProvider.setSize(1000, 400);
+            infoProvider.setSize(1000, 420);
             infoProvider.notifyInitComplete();
         });
     </script>
@@ -424,11 +424,11 @@
         <div class="border-in score digit-container" id="lblMineLeft" data-toggle="tooltip" data-placement="bottom" title="剩余雷数">
             <div></div><div></div><div></div>
         </div>
-        <div class="border-in score digit-container" id="score-one" data-toggle="tooltip" data-placement="bottom" title="玩家 1 分数">
+        <div class="border-in score digit-container" id="boom-one" data-toggle="tooltip" data-placement="bottom" title="玩家 1 踩雷次数">
             <div></div><div></div><div></div>
         </div>
         <span class="title">扫雷（双人版）</span>
-        <div class="border-in score digit-container" id="score-two" data-toggle="tooltip" data-placement="bottom" title="玩家 2 分数">
+        <div class="border-in score digit-container" id="boom-two" data-toggle="tooltip" data-placement="bottom" title="玩家 2 踩雷次数">
             <div></div><div></div><div></div>
         </div>
         <div class="border-in score digit-container" id="lblStepUsed" data-toggle="tooltip" data-placement="bottom" title="已用步数">
