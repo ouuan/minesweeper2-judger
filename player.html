@@ -196,12 +196,16 @@
                     newLogCallback(fulllog.output.display);
                     if (fulllog.output.command == "finish")
                         gameOverCallback(fulllog.output.content);
-                } else if (fulllog[0].response && inGrid(fulllog[0].response.row, fulllog[0].response.col)) {
-                    var currClickedBlock = blocks[fulllog[0].response.row][fulllog[0].response.col];
-                    currClickedBlock.addClass("click");
-                    setTimeout(function () {
-                        currClickedBlock.removeClass("click");
-                    }, 500);
+                } else {
+                    for (let p = 0; p <= 1; ++p) {
+                        if (fulllog[p].response && inGrid(fulllog[p].response.row, fulllog[p].response.col)) {
+                            const currClickedBlock = blocks[fulllog[p].response.row][fulllog[p].response.col];
+                            currClickedBlock.addClass("click");
+                            setTimeout(function () {
+                                currClickedBlock.removeClass("click");
+                            }, 300);
+                        }
+                    }
                 }
             });
 
