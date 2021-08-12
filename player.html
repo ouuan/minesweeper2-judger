@@ -87,6 +87,7 @@
                 var currRow = [];
                 for (var col = 0; col < fieldWidth; col++) {
                     var curr = $block.clone(true);
+                    curr.prop('title', `(${row}, ${col})`);
                     currRow.push(curr.data("coord", { col: col, row: row }));
                     dMineField.append(curr);
                 }
@@ -157,6 +158,13 @@
                 if (log.stepUsed) {
                     ShowLCD(numStepUsed, log.stepUsed);
                 }
+                if (log.response) {
+                    for (let i = 0; i < 2; ++i) {
+                        if (typeof log.response[i] === "object") {
+                            $(`#last${i + 1}`).text(`${log.response[i].row}, ${log.response[i].col}`);
+                        }
+                    }
+                }
             });
 
             infoProvider.setNewRequestCallback(function (log) {
@@ -201,7 +209,6 @@
                 } else {
                     for (let p = 0; p <= 1; ++p) {
                         if (fulllog[p].response && inGrid(fulllog[p].response.row, fulllog[p].response.col)) {
-                            $(`#select${p + 1}`).text(`${fulllog[p].response.row}, ${fulllog[p].response.col}`);
                             const currClickedBlock = blocks[fulllog[p].response.row][fulllog[p].response.col];
                             currClickedBlock.addClass("click");
                             setTimeout(function () {
@@ -453,13 +460,14 @@
             <p>
                 玩家 1: <span id="name-one">Unknown</span><br />
                 踩雷次数: <span id="boom-one">0</span><br />
-                最后一次操作: (<span id="select1"></span>)
+                最后一次操作: (<span id="last1"></span>)
             </p>
             <p>
                 玩家 2: <span id="name-two">Unknown</span><br />
                 踩雷次数: <span id="boom-two">0</span><br />
-                最后一次操作: (<span id="select2"></span>)
+                最后一次操作: (<span id="last2"></span>)
             </p>
+            <p>你可以将鼠标悬停在格子上以查看坐标</p>
         </div>
     </div>
 </body>
