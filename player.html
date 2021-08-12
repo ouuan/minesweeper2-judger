@@ -77,8 +77,10 @@
             ShowLCD(numMineLeft, mineLeft);
 
             const names = infoProvider.getPlayerNames();
-            $('#name-one').text(names[0].name);
-            $('#name-two').text(names[1].name);
+            if (typeof names === "object") {
+                $('#name-one').text(names[0].name);
+                $('#name-two').text(names[1].name);
+            }
 
             var $block = $("<div class=\"mineblock\"></div>");
             for (var row = 0; row < fieldHeight; row++) {
@@ -448,11 +450,11 @@
         <div class="border-in border-thick" id="dMineField"></div>
         <div>
             <p>
-                玩家 1: <span id="name-one"></span><br />
+                玩家 1: <span id="name-one">Unknown</span><br />
                 踩雷次数: <span id="boom-one">0</span>
             </p>
             <p>
-                玩家 2: <span id="name-two"></span><br />
+                玩家 2: <span id="name-two">Unknown</span><br />
                 踩雷次数: <span id="boom-two">0</span>
             </p>
         </div>
