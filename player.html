@@ -9,7 +9,7 @@
     <script type="text/javascript" src="/javascripts/bootstrap.js"></script>
     <script type="text/javascript" src="player_api.js"></script>
     <script type="text/javascript">
-        var dMineField, numMineLeft, numStepUsed, boomOne, boomTwo, blocks = [],
+        var dMineField, numMineLeft, numStepUsed, blocks = [],
             inPlayerTurn, lastMsg, mineLeft = 120, fieldHeight = 16, fieldWidth = 30;
 
         function ShowTroll(target) {
@@ -71,14 +71,14 @@
 
             // 初始化前端显示
             dMineField = $("#dMineField");
-            $("#lblMineLeft, #lblStepUsed, #boom-one, #boom-two").tooltip();
+            $("#lblMineLeft, #lblStepUsed").tooltip();
             numMineLeft = $("#lblMineLeft div");
             numStepUsed = $("#lblStepUsed div");
-            boomOne = $("#boom-one div");
-            boomTwo = $("#boom-two div");
             ShowLCD(numMineLeft, mineLeft);
-            ShowLCD(boomOne, 0);
-            ShowLCD(boomTwo, 0);
+
+            const names = infoProvider.getPlayerNames();
+            $('#name-one').text(names[0].name);
+            $('#name-two').text(names[1].name);
 
             var $block = $("<div class=\"mineblock\"></div>");
             for (var row = 0; row < fieldHeight; row++) {
@@ -149,8 +149,8 @@
                     }
                 }
                 if (log.boom) {
-                    ShowLCD(boomOne, log.boom[0]);
-                    ShowLCD(boomTwo, log.boom[1]);
+                    $("#boom-one").text(log.boom[0]);
+                    $("#boom-two").text(log.boom[1]);
                 }
                 if (log.stepUsed) {
                     ShowLCD(numStepUsed, log.stepUsed);
@@ -327,7 +327,8 @@
             }
 
         .fieldwrapper {
-            text-align: center;
+            display: flex;
+            justify-content: space-evenly;
         }
 
         #imgTroll {
@@ -438,20 +439,22 @@
         <div class="border-in score digit-container" id="lblMineLeft" data-toggle="tooltip" data-placement="bottom" title="剩余雷数">
             <div></div><div></div><div></div>
         </div>
-        <div class="border-in score digit-container" id="boom-one" data-toggle="tooltip" data-placement="bottom" title="玩家 1 踩雷次数">
-            <div></div><div></div><div></div>
-        </div>
         <span class="title">扫雷（双人版）</span>
-        <div class="border-in score digit-container" id="boom-two" data-toggle="tooltip" data-placement="bottom" title="玩家 2 踩雷次数">
-            <div></div><div></div><div></div>
-        </div>
         <div class="border-in score digit-container" id="lblStepUsed" data-toggle="tooltip" data-placement="bottom" title="已用步数">
             <div></div><div></div><div></div>
         </div>
     </div>
     <div class="fieldwrapper">
-        <div class="border-in border-thick" id="dMineField">
-
+        <div class="border-in border-thick" id="dMineField"></div>
+        <div>
+            <p>
+                玩家 1: <span id="name-one"></span><br />
+                踩雷次数: <span id="boom-one">0</span>
+            </p>
+            <p>
+                玩家 2: <span id="name-two"></span><br />
+                踩雷次数: <span id="boom-two">0</span>
+            </p>
         </div>
     </div>
 </body>
