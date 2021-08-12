@@ -201,6 +201,7 @@
                 } else {
                     for (let p = 0; p <= 1; ++p) {
                         if (fulllog[p].response && inGrid(fulllog[p].response.row, fulllog[p].response.col)) {
+                            $(`#select${p + 1}`).text(`${fulllog[p].response.row}, ${fulllog[p].response.col}`);
                             const currClickedBlock = blocks[fulllog[p].response.row][fulllog[p].response.col];
                             currClickedBlock.addClass("click");
                             setTimeout(function () {
@@ -451,11 +452,13 @@
         <div>
             <p>
                 玩家 1: <span id="name-one">Unknown</span><br />
-                踩雷次数: <span id="boom-one">0</span>
+                踩雷次数: <span id="boom-one">0</span><br />
+                最后一次操作: (<span id="select1"></span>)
             </p>
             <p>
                 玩家 2: <span id="name-two">Unknown</span><br />
-                踩雷次数: <span id="boom-two">0</span>
+                踩雷次数: <span id="boom-two">0</span><br />
+                最后一次操作: (<span id="select2"></span>)
             </p>
         </div>
     </div>
