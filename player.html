@@ -112,10 +112,46 @@
                     if (inPlayerTurn) {
                         if (!$this.hasClass("tagmine") && e.button == 0)
                             $this.addClass("pressed");
+                        if ($this.data("status") && e.buttons === 3) // double-click
+                        {
+                            const num = $this.data("status") - 1;
+                            const coord = $this.data("coord");
+                            const row = coord.row;
+                            const col = coord.col;
+
+                            let cx = null, cy, mineAround = 0;
+
+                            for (let dx = -1; dx <= 1; ++dx)
+                            {
+                                const nx = row + dx;
+                                if (nx < 0 || nx >= fieldHeight) continue;
+                                for (let dy = -1; dy <= 1; ++dy)
+                                {
+                                    const ny = col + dy;
+                                    if (ny < 0 || ny >= fieldWidth) continue;
+                                    if (blocks[nx][ny].data("status") == 10 || blocks[nx][ny].hasClass("tagmine")) ++mineAround;
+                                    else if (!blocks[nx][ny].data("status"))
+                                    {
+                                        cx = nx;
+                                        cy = ny;
+                                        blocks[nx][ny].addClass("pressed");
+                                    }
+                                }
+                            }
+
+                            if (num == mineAround && cx !== null) {
+                                infoProvider.notifyPlayerMove({
+                                    row: cx,
+                                    col: cy,
+                                });
+                                dMineField.css({ opacity: 0.5 });
+                                inPlayerTurn = false;
+                            }
+                        }
                     }
                 })
-                .on('mouseup', '.mineblock', function () {
-                    $(this).removeClass("pressed");
+                .on('mouseup', function () {
+                    $('.mineblock').removeClass("pressed");
                 })
                 .on('click', '.mineblock', function (e) {
                     var $this = $(this);
